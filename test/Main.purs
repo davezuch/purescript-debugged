@@ -4,6 +4,7 @@ import Prelude
 
 import Control.Apply (lift3)
 import Data.Array (range)
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Date (canonicalDate)
 import Data.Debug (class Debug, debug, diff, genericDebug, prettyPrintDelta)
 import Data.Debug.Eval (eval)
@@ -67,6 +68,7 @@ main = do
   p (Map.fromFoldable [Tuple "a" 1, Tuple "b" 2])
   p (L.fromFoldable (range 1 10))
   p (LL.fromFoldable (range 1 10))
+  p (NonEmptyArray.cons' 1 (range 2 10))
   p (lift3 canonicalDate (toEnum 2000) (toEnum 1) (toEnum 2))
   p (pure unit :: Effect Unit)
 
@@ -82,6 +84,11 @@ main = do
   do
     let x = Map.fromFoldable [Tuple "a" 1, Tuple "b" 2]
         y = Map.fromFoldable [Tuple "a" 2, Tuple "c" 3]
+    superbAssertEqual x y
+
+  do
+    let x = NonEmptyArray.cons' 1 [2, 3, 4, 5]
+        y = NonEmptyArray.cons' 1 [2, 4, 3, 5]
     superbAssertEqual x y
 
 -- note: the type signature is needed here for instance selection

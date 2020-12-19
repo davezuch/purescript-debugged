@@ -11,6 +11,7 @@ module Data.Debug.Class
 import Prelude
 
 import Data.Array as Array
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Bifunctor (bimap)
 import Data.Date (Date, day, month, year)
 import Data.Debug.Type as D
@@ -140,6 +141,9 @@ instance debugEither :: (Debug a, Debug b) => Debug (Either a b) where
 
 instance debugTuple :: (Debug a, Debug b) => Debug (Tuple a b) where
   debug (Tuple x y) = D.constructor "Tuple" [debug x, debug y]
+
+instance debugNonEmptyArray :: Debug a => Debug (NonEmptyArray.NonEmptyArray a) where
+  debug xs = D.collection "NonEmptyArray" (map debug (NonEmptyArray.toArray xs))
 
 instance debugMap :: (Debug k, Debug v) => Debug (Map k v) where
   debug m =
