@@ -15,7 +15,9 @@ import Data.List as L
 import Data.List.Lazy as LL
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
+import Data.Symbol (SProxy(..))
 import Data.Tuple (Tuple(..))
+import Data.Variant (Variant, inj)
 import Effect (Effect)
 import Effect.Console (log)
 
@@ -65,6 +67,8 @@ main = do
   p {foo: 1, bar: "hi", baz: {quux: 3, aah: Tuple "AAH" "AAAAH"}}
   p {type: {data: 0}}
   p {"0": {"1": 2}}
+  p (inj (SProxy :: SProxy "foo") 1 :: Variant (foo :: Int, bar :: String))
+  p (inj (SProxy :: SProxy "bar") "hi" :: Variant (foo :: Int, bar :: String))
   p (Map.fromFoldable [Tuple "a" 1, Tuple "b" 2])
   p (L.fromFoldable (range 1 10))
   p (LL.fromFoldable (range 1 10))

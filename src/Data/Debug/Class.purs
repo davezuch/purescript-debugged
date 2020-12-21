@@ -29,6 +29,7 @@ import Data.Set as Set
 import Data.String as String
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Tuple (Tuple(..))
+import Data.Variant (Variant, on)
 import Effect (Effect)
 import Prim.Row as Row
 import Record (get, delete)
@@ -84,20 +85,23 @@ instance debugFunction :: Debug (a -> b) where
 
 -- | This class is part of the machinery for the `Debug (Record r)` instance;
 -- | it is not intended to be used directly.
-class DebugRowList (list :: RowList) (row :: # Type) | list -> row where
-  debugRowList :: RLProxy list -> Record row -> List (Tuple String D.Repr)
+class DebugRowList wrapper (list :: RowList) (row :: # Type) | list -> row where
+  debugRowList :: RLProxy list -> wrapper row -> List (Tuple String D.Repr)
 
-instance debugRowListNil :: DebugRowList Nil () where
+instance debugRowListNilRecord :: DebugRowList Record Nil () where
   debugRowList _ _ = Nil
 
-instance debugRowListCons ::
+instance debugRowListNilVariant :: DebugRowList Variant Nil () where
+  debugRowList _ _ = Nil
+
+instance debugRowListConsRecord ::
   ( Debug a
-  , DebugRowList listRest rowRest
-  , Row.Cons  key a rowRest rowFull
+  , DebugRowList Record listRest rowRest
+  , Row.Cons key a rowRest rowFull
   , Row.Lacks key rowRest
   , RowToList rowFull (Cons key a listRest)
   , IsSymbol key
-  ) => DebugRowList (Cons key a listRest) rowFull where
+  ) => DebugRowList Record (Cons key a listRest) rowFull where
   debugRowList _ rec =
     Tuple (reflectSymbol key) (debug val) : rest
     where
@@ -105,12 +109,36 @@ instance debugRowListCons ::
     val = get key rec
     rest = debugRowList (RLProxy :: RLProxy listRest) (delete key rec)
 
+instance debugRowListConsVariant ::
+  ( Debug a
+  , DebugRowList Variant listRest rowRest
+  , Row.Cons key a rowRest rowFull
+  , Row.Lacks key rowRest
+  , RowToList rowFull (Cons key a listRest)
+  , IsSymbol key
+  ) => DebugRowList Variant (Cons key a listRest) rowFull where
+  debugRowList _ var = 
+    on key match rest var
+    where
+    key = SProxy :: SProxy key
+    match val = Tuple (reflectSymbol key) (debug val) : Nil
+    rest = debugRowList (RLProxy :: RLProxy listRest)
+
 instance debugRecord ::
   ( RowToList row list
-  , DebugRowList list row
+  , DebugRowList Record list row
   ) => Debug (Record row) where
   debug r =
     D.record (Array.fromFoldable (debugRowList prx r))
+    where
+    prx = RLProxy :: RLProxy list
+
+instance debugVariant ::
+  ( RowToList row list
+  , DebugRowList Variant list row
+  ) => Debug (Variant row) where
+  debug v =
+    D.variant (Array.fromFoldable (debugRowList prx v))
     where
     prx = RLProxy :: RLProxy list
 

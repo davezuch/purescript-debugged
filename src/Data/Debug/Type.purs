@@ -12,6 +12,7 @@ module Data.Debug.Type
   , string
   , array
   , record
+  , variant
   , constructor
   , opaque
   , opaque_
@@ -138,6 +139,10 @@ data Label
   -- children should all have Prop labels.
   | Record
 
+  -- This label represents a value of the type `Data.Variant.Variant`. Its
+  -- immediate child should have a Prop label.
+  | Variant
+
   -- This node represents a property with the given name. It should only occur
   -- as a direct descendent of a Record- or Opaque-labelled node.  A node
   -- with this label should always have exactly one child: the property value.
@@ -224,6 +229,13 @@ array = Repr <<< Node Array <<< map unRepr
 record :: Array (Tuple String Repr) -> Repr
 record =
   Repr <<< Node Record <<< makeProps
+
+-- | Create a `Repr` for a `Variant`, given its label and value. This function
+-- | should only be used to construct `Repr` values for values of the type
+-- | `Variant r`;
+variant :: Array (Tuple String Repr) -> Repr
+variant = 
+  Repr <<< Node Variant <<< makeProps
 
 makeProps :: Array (Tuple String Repr) -> Array (Tree Label)
 makeProps = map unwrapProp
@@ -552,6 +564,8 @@ prettyPrintGo root children =
       commaSeq "[ " " ]" children
     Record ->
       commaSeq "{ " " }" children
+    Variant ->
+      commaSeq "Variant ( " " )" children
     Opaque name ->
       if Array.null children
         then
@@ -655,6 +669,8 @@ labelSize =
     Array ->
       1
     Record ->
+      2
+    Variant ->
       2
     Prop name ->
       if String.length name <= 15 then 0 else 1
