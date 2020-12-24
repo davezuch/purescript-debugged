@@ -2,10 +2,11 @@ module Test.Main where
 
 import Prelude
 
-import Control.Apply (lift3)
+import Control.Apply (lift2, lift3)
 import Data.Array (range)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Date (canonicalDate)
+import Data.DateTime (DateTime(..))
 import Data.Debug (class Debug, debug, diff, genericDebug, prettyPrintDelta)
 import Data.Debug.Eval (eval)
 import Data.Either (Either(..))
@@ -16,6 +17,7 @@ import Data.List.Lazy as LL
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Symbol (SProxy(..))
+import Data.Time (Time)
 import Data.Tuple (Tuple(..))
 import Data.Variant (Variant, inj)
 import Effect (Effect)
@@ -74,6 +76,8 @@ main = do
   p (LL.fromFoldable (range 1 10))
   p (NonEmptyArray.cons' 1 (range 2 10))
   p (lift3 canonicalDate (toEnum 2000) (toEnum 1) (toEnum 2))
+  p (top :: Time)
+  p (lift2 DateTime (lift3 canonicalDate (toEnum 2020) (toEnum 12) (toEnum 31)) (pure bottom))
   p (pure unit :: Effect Unit)
 
   p (None :: Eg)

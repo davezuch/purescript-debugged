@@ -14,6 +14,7 @@ import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Bifunctor (bimap)
 import Data.Date (Date, day, month, year)
+import Data.DateTime (DateTime, date, time)
 import Data.Debug.Type as D
 import Data.Either (Either(..))
 import Data.Enum (fromEnum)
@@ -26,6 +27,7 @@ import Data.Maybe (Maybe(..))
 import Data.Monoid (power)
 import Data.Set (Set)
 import Data.Set as Set
+import Data.Time (Time, hour, minute, second)
 import Data.String as String
 import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Tuple (Tuple(..))
@@ -191,13 +193,29 @@ instance debugSet :: Debug a => Debug (Set a) where
   debug s = D.collection "Set" (map debug (Set.toUnfoldable s))
 
 instance debugDate :: Debug Date where
-  debug d = D.opaqueLiteral "Date"
+  debug d = D.opaqueLiteral "Date" (debugDate' d)
+
+instance debugDateTime :: Debug DateTime where
+  debug dt = D.opaqueLiteral "DateTime" (debugDate' (date dt) <> " " <> debugTime' (time dt))
+
+instance debugTime :: Debug Time where
+  debug t = D.opaqueLiteral "Time" (debugTime' t)
+
+debugDate' :: Date -> String
+debugDate' d =
     (ljust0 4 (show (fromEnum (year d))) <> "-" <>
      ljust0 2 (show (fromEnum (month d))) <> "-" <>
      ljust0 2 (show (fromEnum (day d))))
-    where
-    ljust0 n str =
-      power "0" (n - String.length str) <> str
+
+debugTime' :: Time -> String
+debugTime' t =
+  (ljust0 2 (show (fromEnum (hour t))) <> ":" <>
+   ljust0 2 (show (fromEnum (minute t))) <> ":" <>
+   ljust0 2 (show (fromEnum (second t))))
+
+ljust0 :: Int -> String -> String
+ljust0 n str =
+  power "0" (n - String.length str) <> str
 
 instance debugRepr :: Debug D.Repr where
   debug r = D.opaque "Repr" r
