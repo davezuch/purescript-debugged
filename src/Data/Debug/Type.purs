@@ -387,7 +387,7 @@ diff' labelEq isUnimportantLabel = go
         let
           children = goChildren xs ys
         in
-          if isUnimportantLabel x && all differing children
+          if isUnimportantLabel x && Array.length children > 0 && all differing children
             then
               Node Different [map Subtree left, map Subtree right]
             else
@@ -477,7 +477,7 @@ type PrettyPrintOptions
 
 defaultPrettyPrintOptions :: PrettyPrintOptions
 defaultPrettyPrintOptions =
-  { maxDepth: Just 4
+  { maxDepth: Just 9
   , compactThreshold: 8
   }
 
