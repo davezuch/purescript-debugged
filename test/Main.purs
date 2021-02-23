@@ -26,7 +26,9 @@ import Effect.Console (log)
 superbAssertEqual :: forall a. Eq a => Debug a => a -> a -> Effect Unit
 superbAssertEqual x y =
   if x == y
-    then pure unit
+    then do
+      log "(Pretend) test succeeded:"
+      log (prettyPrintDelta (diff x y))
     else do
        log "(Pretend) test failed:"
        log (prettyPrintDelta (diff x y))
@@ -84,6 +86,8 @@ main = do
   p (PairA 3 3 :: Eg)
   p (Loads [1,2,3] (Right ["hi"]))
 
+  superbAssertEqual ([] :: Array Int) []
+
   do
     let x = Loads [1,2,3,4,5] (Right ["hi", "world"])
         y = Loads [1,2,4,3,5] (Right [])
@@ -97,6 +101,11 @@ main = do
   do
     let x = NonEmptyArray.cons' 1 [2, 3, 4, 5]
         y = NonEmptyArray.cons' 1 [2, 4, 3, 5]
+    superbAssertEqual x y
+
+  do
+    let x = { first: { second: { third: { str: "x", bool: true, arr: [1, 2, 3] } } } }
+        y = { first: { second: { third: { str: "y", bool: true, arr: [1, 2, 3] } } } }
     superbAssertEqual x y
 
 -- note: the type signature is needed here for instance selection
