@@ -87,7 +87,7 @@ instance debugFunction :: Debug (a -> b) where
 
 -- | This class is part of the machinery for the `Debug (Record r)` instance;
 -- | it is not intended to be used directly.
-class DebugRowList wrapper (list :: RowList) (row :: # Type) | list -> row where
+class DebugRowList wrapper (list :: RowList Type) (row :: # Type) | list -> row where
   debugRowList :: RLProxy list -> wrapper row -> List (Tuple String D.Repr)
 
 instance debugRowListNilRecord :: DebugRowList Record Nil () where
