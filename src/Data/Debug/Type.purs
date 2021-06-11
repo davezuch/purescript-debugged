@@ -54,16 +54,6 @@ import Math as Math
 data Tree a
   = Node a (Array (Tree a))
 
-rootLabel :: forall a. Tree a -> a
-rootLabel (Node r _) = r
-
-subtrees :: forall a. Tree a -> Array (Tree a)
-subtrees (Node _ xs) = xs
-
-isLeaf :: forall a. Tree a -> Boolean
-isLeaf (Node _ []) = true
-isLeaf _ = false
-
 derive instance eqTree :: Eq a => Eq (Tree a)
 derive instance ordTree :: Ord a => Ord (Tree a)
 derive instance functorTree :: Functor Tree
