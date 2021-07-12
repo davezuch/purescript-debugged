@@ -1,81 +1,77 @@
-BOWER := npx bower
-BOWER_FLAGS ?=
-COMPILE_FLAGS ?=
-DEPENDENCIES := 'bower_components/purescript-*/src/**/*.purs'
-NODE := node
-NPM := npm
-OUTPUT := output
-PSA := npx psa
-PURS := npx purs
-PURTY := npx purty
-REPL_FLAGS ?=
-SRC := src
-TEST := test
+# Vairables that might need to be overriden.
+ROOT_DIR ?= $(shell pwd)
+BUILD_DIR ?= $(ROOT_DIR)/.build
+OUTPUT_DIR ?= $(ROOT_DIR)/output
+RTS_ARGS ?=
+SRC_DIR ?= $(ROOT_DIR)/src
+TEST_DIR ?= $(ROOT_DIR)/test
 
-SRCS := $(shell find $(SRC) -name '*.purs' -type f)
-TESTS := $(shell find $(TEST) -name '*.purs' -type f)
-SRC_OUTPUTS := $(patsubst $(SRC).%.purs,$(OUTPUT)/%/index.js,$(subst /,.,$(SRCS)))
-TEST_OUTPUTS := $(patsubst $(TEST).%.purs,$(OUTPUT)/%/index.js,$(subst /,.,$(TESTS)))
+# Variables that we control
+CLEAN_DEPS :=
+DEPS := $(BUILD_DIR)/.deps
+FIND_SRC_FILES_ARGS := \( -name '*.purs' -o -name '*.js' \) -type f
+NODE_MODULES := $(ROOT_DIR)/node_modules/.stamp
+PACKAGE_JSON := $(ROOT_DIR)/package.json
+PACKAGE_LOCK := $(ROOT_DIR)/package-lock.json
+SRC_FILES := $(shell find $(SRC_DIR) $(FIND_SRC_FILES_ARGS))
+TEST_FILES := $(shell find $(TEST_DIR) $(FIND_SRC_FILES_ARGS))
 
-define SRC_OUTPUT_RULE
-$(patsubst $(SRC).%.purs,$(OUTPUT)/%/index.js,$(subst /,.,$(1))): $(1) bower_components
-	$(PSA) compile $(COMPILE_FLAGS) $(DEPENDENCIES) $(SRCS)
-endef
+# Colors for printing
+CYAN := \033[0;36m
+RESET := \033[0;0m
 
-define TEST_OUTPUT_RULE
-$(patsubst $(TEST).%.purs,$(OUTPUT)/%/index.js,$(subst /,.,$(1))): $(1) $(SRC_OUTPUTS) bower_components
-	$(PSA) compile $(COMPILE_FLAGS) $(DEPENDENCIES) $(SRCS) $(TESTS)
-endef
+.DEFAULT_GOAL := test
 
-$(foreach source, $(SRCS), $(eval $(call SRC_OUTPUT_RULE, $(source))))
-
-$(foreach test, $(TESTS), $(eval $(call TEST_OUTPUT_RULE, $(test))))
-
-.DEFAULT_GOAL := build
-
-$(OUTPUT):
+$(BUILD_DIR):
 	mkdir -p $@
 
-$(OUTPUT)/test.js: $(SRC_OUTPUTS) $(TEST_OUTPUTS) | $(OUTPUT)
-	$(PURS) bundle \
-	  --main Test.Main \
-	  --module Test.Main \
-	  --output $@ \
-	  output/*/index.js \
-	  output/*/foreign.js
+$(BUILD_DIR)/help-unsorted: $(MAKEFILE_LIST) | $(BUILD_DIR)
+	@grep \
+		--extended-regexp '^[A-Za-z_-]+:.*?## .*$$' \
+	  --no-filename \
+	  $(MAKEFILE_LIST) \
+	  > $@
 
-bower_components: bower.json node_modules
-	$(BOWER) $(BOWER_FLAGS) install
+$(BUILD_DIR)/help: $(BUILD_DIR)/help-unsorted | $(BUILD_DIR)
+	@sort $< > $@
+
+$(BUILD_DIR)/test.js: $(OUTPUT_DIR)/Test.Main/index.js | $(BUILD_DIR)
+	npx purs bundle \
+		$(RTS_ARGS) \
+		$(OUTPUT_DIR)/*/*.js \
+		--main Test.Main \
+		--module Test.Main \
+		--output $@
+
+$(BUILD_DIR)/test.out: $(BUILD_DIR)/test.js
+	node $< | tee $@.tmp # Store output in a temp file in case of a failure.
+	mv $@.tmp $@ # Move the output where it belongs.
+
+$(DEPS): packages.dhall spago.dhall $(NODE_MODULES) | $(BUILD_DIR)
+	npx spago install $(RTS_ARGS)
 	touch $@
 
-.PHONY: build
-build: bower_components $(SRC_OUTPUTS)
+$(NODE_MODULES): $(PACKAGE_JSON) $(PACKAGE_LOCK)
+	npm install
+	touch $@
+
+$(OUTPUT_DIR)/Test.Main/index.js: $(SRC_FILES) $(TEST_FILES) $(DEPS)
+	npx spago build -p "$(TEST_DIR)/Main.purs $(TEST_DIR)/Test/**/*.purs" -u "$(RTS_ARGS)"
 
 .PHONY: clean
-clean:
-	rm -rf \
-	  .psc-ide-port \
-	  .psci_modules \
-	  bower_components \
-	  node_modules \
-	  output
+clean: $(CLEAN_DEPS) ## Remove all dependencies and build artifacts, starting with a clean slate
+	rm -fr \
+		$(BUILD_DIR) \
+		$(OUTPUT_DIR) \
+		$(ROOT_DIR)/.spago \
+		$(ROOT_DIR)/node_modules
 
-.PHONY: format
-format: node_modules
-	find $(SRC) -name '*.purs' -exec $(PURTY) --write {} \;
-	find $(TEST) -name '*.purs' -exec $(PURTY) --write {} \;
-
-node_modules: package.json 
-	$(NPM) install
-	touch $@
-
-.PHONY: repl 
-repl: bower_components
-	$(PURS) repl $(REPL_FLAGS) $(DEPENDENCIES) $(SRCS)
+.PHONY: help
+help: $(BUILD_DIR)/help ## Display this help message
+	@awk 'BEGIN {FS = ":.*?## "}; {printf "$(CYAN)%-30s$(RESET) %s\n", $$1, $$2}' $<
 
 .PHONY: test
-test: $(OUTPUT)/test.js bower_components $(SRC_OUTPUTS) $(TEST_OUTPUTS)
-	$(NODE) $<
+test: $(BUILD_DIR)/test.out ## Build and run tests
 
 .PHONY: variables
 variables:

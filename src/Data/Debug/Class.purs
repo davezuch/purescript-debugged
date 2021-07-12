@@ -33,9 +33,12 @@ import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Variant (Variant, on)
 import Effect (Effect)
+import Foreign.Object (Object)
+import Foreign.Object as Object
 import Prim.Row as Row
+import Prim.RowList (kind RowList)
 import Record (get, delete)
-import Prim.RowList (class RowToList, kind RowList, Nil, Cons)
+import Prim.RowList (class RowToList, Nil, Cons)
 import Type.Data.RowList (RLProxy(..))
 
 -- | Ideally, all types of kind `Type` should have an instance of this class.
@@ -87,7 +90,7 @@ instance debugFunction :: Debug (a -> b) where
 
 -- | This class is part of the machinery for the `Debug (Record r)` instance;
 -- | it is not intended to be used directly.
-class DebugRowList wrapper (list :: RowList Type) (row :: # Type) | list -> row where
+class DebugRowList wrapper (list :: RowList Type) (row :: Row Type) | list -> row where
   debugRowList :: RLProxy list -> wrapper row -> List (Tuple String D.Repr)
 
 instance debugRowListNilRecord :: DebugRowList Record Nil () where
@@ -179,6 +182,11 @@ instance debugMap :: (Debug k, Debug v) => Debug (Map k v) where
   debug m =
     D.assoc "Map"
       (map (bimap debug debug) (Map.toUnfoldable m))
+
+instance dubegObject :: Debug a => Debug (Object a) where
+  debug o =
+    D.assoc "Object"
+      (map (bimap debug debug) (Object.toUnfoldable o))
 
 instance debugEffect :: Debug (Effect a) where
   debug _ = D.opaque_ "Effect"

@@ -1,3 +1,4 @@
+/.build/
 /bower_components/
 /node_modules/
 /.pulp-cache/
@@ -7,4 +8,5 @@
 /.psc*
 /.purs*
 /.psa*
-/.spago
+/.spago/
+/.vscode/
