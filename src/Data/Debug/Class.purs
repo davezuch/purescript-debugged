@@ -33,6 +33,8 @@ import Data.Symbol (class IsSymbol, SProxy(..), reflectSymbol)
 import Data.Tuple (Tuple(..))
 import Data.Variant (Variant, on)
 import Effect (Effect)
+import Foreign.Object (Object)
+import Foreign.Object as Object
 import Prim.Row as Row
 import Prim.RowList (kind RowList)
 import Record (get, delete)
@@ -180,6 +182,11 @@ instance debugMap :: (Debug k, Debug v) => Debug (Map k v) where
   debug m =
     D.assoc "Map"
       (map (bimap debug debug) (Map.toUnfoldable m))
+
+instance dubegObject :: Debug a => Debug (Object a) where
+  debug o =
+    D.assoc "Object"
+      (map (bimap debug debug) (Object.toUnfoldable o))
 
 instance debugEffect :: Debug (Effect a) where
   debug _ = D.opaque_ "Effect"

@@ -22,6 +22,7 @@ import Data.Tuple (Tuple(..))
 import Data.Variant (Variant, inj)
 import Effect (Effect)
 import Effect.Console (log)
+import Foreign.Object as Object
 
 superbAssertEqual :: forall a. Eq a => Debug a => a -> a -> Effect Unit
 superbAssertEqual x y =
@@ -74,6 +75,7 @@ main = do
   p (inj (SProxy :: SProxy "foo") 1 :: Variant (foo :: Int, bar :: String))
   p (inj (SProxy :: SProxy "bar") "hi" :: Variant (foo :: Int, bar :: String))
   p (Map.fromFoldable [Tuple "a" 1, Tuple "b" 2])
+  p (Object.fromFoldable [Tuple "a" 1, Tuple "b" 2])
   p (L.fromFoldable (range 1 10))
   p (LL.fromFoldable (range 1 10))
   p (NonEmptyArray.cons' 1 (range 2 10))
